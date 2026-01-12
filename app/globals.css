@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+:root {
+    /* PREMIUM LIGHT THEME */
+    --background: #FFFFFF;
+    --panel: #F9FAFB;
+    --surface: #FFFFFF;
+    --surface-highlight: #F3F4F6;
+
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-tertiary: #94A3B8;
+
+    /* BRAND ACCENTS - STRICT #008000 */
+    --accent-primary: #008000;
+    --accent-glow: rgba(0, 128, 0, 0.15);
+    --accent-hover: #006600;
+    /* Darker green for hover */
+
+    --accent-success: #008000;
+    --accent-warning: #F59E0B;
+    --accent-error: #EF4444;
+    --accent-info: #008000;
+    /* Unified to Brand Green where possible */
+
+    --border: #E2E8F0;
+    --border-hover: #CBD5E1;
+
+    --glass-surface: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.05);
+
+    --font-sans: var(--font-inter);
+    --font-mono: var(--font-jetbrains-mono);
+}
+
+[data-theme='dark'] {
+    /* TRUE BLACK DARK THEME */
+    --background: #000000;
+    /* True Black */
+    --panel: #09090b;
+    /* Zinc 950 */
+    --surface: #000000;
+    --surface-highlight: #18181b;
+    /* Zinc 900 */
+
+    --text-primary: #FFFFFF;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #52525B;
+
+    /* BRAND ACCENTS - LUMINOUS GREEN */
+    --accent-primary: #008000;
+    --accent-glow: rgba(0, 128, 0, 0.35);
+    --accent-hover: #00A600;
+    /* Lighter green for dark mode hover */
+
+    --accent-success: #008000;
+    --accent-warning: #F59E0B;
+    --accent-error: #EF4444;
+    --accent-info: #008000;
+    /* Unified */
+
+    --border: #27272A;
+    /* Zinc 800 */
+    --border-hover: #3F3F46;
+    /* Zinc 700 */
+
+    --glass-surface: rgba(0, 0, 0, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+@layer base {
+    * {
+        border-color: var(--border);
+        min-width: 0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
+        font-size: 15px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+        background-color: var(--background);
+        color: var(--text-primary);
+        font-family: var(--font-sans), system-ui, sans-serif;
+        overflow-x: hidden;
+        min-height: 100vh;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--text-primary);
+    }
+
+    ::selection {
+        background: var(--accent-primary);
+        color: white;
+    }
+}
+
+@layer utilities {
+    .glass {
+        background: var(--glass-surface);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+    }
+
+    .spotlight-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+    }
+
+    .spotlight-card:hover {
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 30px var(--accent-glow);
+        transform: translateY(-2px);
+    }
+
+    .glow-text {
+        text-shadow: 0 0 30px var(--accent-glow);
+    }
+
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
