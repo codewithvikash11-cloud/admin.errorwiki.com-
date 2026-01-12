@@ -1,13 +1,24 @@
-"use client";
-
 import React, { useState } from 'react';
 import AdminGuard from '@/components/admin/AdminGuard';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import Navbar from '@/components/Navbar';
 import { NavbarProvider } from '@/context/NavbarContext';
+import { usePathname } from 'next/navigation';
 
 export default function AdminLayout({ children }) {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const pathname = usePathname();
+    const isLoginPage = pathname === '/admin/login';
+
+    if (isLoginPage) {
+        return (
+            <AdminGuard>
+                <NavbarProvider>
+                    {children}
+                </NavbarProvider>
+            </AdminGuard>
+        );
+    }
 
     return (
         <AdminGuard>
