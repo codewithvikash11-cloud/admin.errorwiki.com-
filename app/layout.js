@@ -19,6 +19,9 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  if (typeof window !== 'undefined') {
+    console.log("%c Admin Panel v2.1 Local Auth Loaded ", "background: #008000; color: #fff; font-weight: bold;");
+  }
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
