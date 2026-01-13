@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { adminService } from '@/lib/admin-service';
+import { getSettings, updateSettings } from '@/lib/actions/settings';
 import { Save, Globe, Lock, Mail, Palette, Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -17,7 +17,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         const load = async () => {
-            const data = await adminService.getSettings();
+            const data = await getSettings();
             setSettings(prev => ({ ...prev, ...data })); // Merge with defaults
             setIsLoading(false);
         };
@@ -38,7 +38,7 @@ export default function SettingsPage() {
         try {
             // Filter out system fields
             const { $id, $createdAt, $updatedAt, $permissions, $databaseId, $collectionId, ...cleanSettings } = settings;
-            await adminService.updateSettings(cleanSettings);
+            await updateSettings(cleanSettings);
             alert("Settings saved successfully!");
         } catch (error) {
             alert("Failed to save settings: " + error.message);

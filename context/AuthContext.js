@@ -19,13 +19,16 @@ export function AuthProvider({ children }) {
 
     const checkUser = async () => {
         try {
-            if (typeof window !== 'undefined') {
-                const isAuthenticated = localStorage.getItem("admin_auth") === "true";
-                if (isAuthenticated) {
-                    setUser({ email: 'admin@errorwiki.com', name: 'Admin', role: 'admin' });
-                } else {
-                    setUser(null);
-                }
+            // Check session via a new API route or just rely on middleware protection + client state
+            // For client-side state, we can try to fetch the user profile if we had a /me endpoint
+            // For now, if we are on a protected route and middleware didn't kick us, we are likely auth'd.
+            // But to be sure and get user info:
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const data = await res.json();
+                setUser({ email: data.user, name: 'Admin', role: 'admin' });
+            } else {
+                setUser(null);
             }
         } catch (error) {
             setUser(null);
@@ -35,25 +38,36 @@ export function AuthProvider({ children }) {
     };
 
     const login = async (email, password) => {
-        // Simple fixed password check
-        if (password === "Admin@12345") {
-            if (typeof window !== 'undefined') {
-                localStorage.setItem("admin_auth", "true");
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                // Determine user from email for local state
+                setUser({ email: email, name: 'Admin', role: 'admin' });
+                return { success: true };
+            } else {
+                return { success: false, error: data.error || "Invalid credentials" };
             }
-            setUser({ email: email || 'admin@errorwiki.com', name: 'Admin', role: 'admin' });
-            return { success: true };
-        } else {
-            return { success: false, error: "Invalid password" };
+        } catch (error) {
+            return { success: false, error: "Network error" };
         }
     };
 
     const signup = async () => {
-        return { success: false, error: "Registration disabled in local mode." };
+        return { success: false, error: "Registration disabled." };
     };
 
     const logout = async () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem("admin_auth");
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (e) {
+            console.error('Logout failed', e);
         }
         setUser(null);
         router.push('/admin/login');

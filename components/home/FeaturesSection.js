@@ -214,7 +214,28 @@ const CopyPasteVisual = () => {
     );
 };
 
-const FeaturesSection = () => {
+const FeaturesSection = ({ customTitle, customItems }) => {
+    // Basic mapping of icons based on keywords if dynamic, or just random/default
+    const getIcon = (title) => {
+        const t = title.toLowerCase();
+        if (t.includes('code') || t.includes('solution')) return <Code2 size={24} className="text-accent-primary" />;
+        if (t.includes('secure') || t.includes('shield')) return <Shield size={24} className="text-accent-primary" />;
+        if (t.includes('global') || t.includes('cdn')) return <Globe size={24} className="text-accent-primary" />;
+        if (t.includes('fast') || t.includes('performance')) return <Zap size={24} className="text-accent-primary" />;
+        return <Terminal size={24} className="text-accent-primary" />;
+    };
+
+    const title = customTitle || "Built for Performance";
+
+    // If customItems provided, use them. Else use default hardcoded for fallback.
+    const items = customItems && customItems.length > 0 ? customItems : [
+        { title: "Instant Solutions", desc: "Get direct, verified fixes for your specific error logs instantly.", href: "/solutions", cta: "Explore Solutions", className: "md:col-span-2 md:row-span-2 bg-gradient-to-br from-surface to-surface-highlight border-accent-primary/20 shadow-xl", visual: <SolutionsVisual /> },
+        { title: "Verified by Experts", desc: "Every solution is peer-reviewed by senior architects.", className: "bg-surface" },
+        { title: "Universal Knowledge", desc: "From React hydration errors to Rust borrow checker issues.", className: "bg-surface" },
+        { title: "Copy-Paste Ready", desc: "Clean, formatted code snippets.", href: "/errors", cta: "Learn more", className: "bg-surface relative", visual: <CopyPasteVisual /> },
+        { title: "Global CDN", desc: "Access solutions from any edge location within milliseconds.", href: "/global-cdn", cta: "View Network", className: "md:col-span-2 bg-gradient-to-l from-surface to-surface-highlight relative", visual: <GlobalCDNVisual /> }
+    ];
+
     return (
         <section className="py-24 relative bg-background overflow-hidden">
 
@@ -225,10 +246,10 @@ const FeaturesSection = () => {
             <div className="container mx-auto px-6 lg:px-12 mb-16 relative z-10">
                 <div className="max-w-2xl">
                     <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-accent-primary">
-                        Built for Performance
+                        {title}
                     </h2>
                     <p className="text-base text-text-secondary leading-relaxed">
-                        Features designed for the modern stack. Everything you need to debug faster, optimizing your workflow from day one.
+                        Features designed for the modern stack. Everything you need to debug faster.
                     </p>
                 </div>
             </div>
@@ -236,55 +257,19 @@ const FeaturesSection = () => {
             {/* Bento Grid Layout */}
             <div className="container mx-auto px-6 lg:px-12 relative z-10">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(280px,auto)]">
-
-                    {/* HERO FEATURE: Instant Solutions */}
-                    <BentoCard
-                        title="Instant Solutions"
-                        description="Stop wasting hours on StackOverflow. Get direct, verified fixes for your specific error logs instantly using our AI-driven engine."
-                        icon={<Zap size={24} className="text-accent-primary" />}
-                        className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-surface to-surface-highlight border-accent-primary/20 shadow-xl"
-                        href="/solutions"
-                        ctaText="Explore Solutions"
-                    >
-                        <SolutionsVisual />
-                    </BentoCard>
-
-                    {/* Standard Card 2 */}
-                    <BentoCard
-                        title="Verified by Experts"
-                        description="Every solution is peer-reviewed by senior architects for security and best practices."
-                        icon={<Shield size={24} className="text-accent-primary" />}
-                        className="bg-surface"
-                    />
-
-                    {/* Standard Card 3 */}
-                    <BentoCard
-                        title="Universal Knowledge"
-                        description="From React hydration errors to Rust borrow checker issues—we cover the stack."
-                        className="bg-surface"
-                    />
-
-                    <BentoCard
-                        title="Copy-Paste Ready"
-                        description="Clean, formatted code snippets."
-                        icon={<Code2 size={24} className="text-accent-primary" />}
-                        className="bg-surface relative"
-                        href="/errors"
-                        ctaText="Learn more"
-                    >
-                        <CopyPasteVisual />
-                    </BentoCard>
-
-                    <BentoCard
-                        title="Global CDN"
-                        description="Access solutions from any edge location within milliseconds."
-                        icon={<Globe size={24} className="text-accent-primary" />}
-                        className="md:col-span-2 bg-gradient-to-l from-surface to-surface-highlight relative"
-                        href="/global-cdn"
-                        ctaText="View Network"
-                    >
-                        <GlobalCDNVisual />
-                    </BentoCard>
+                    {items.map((item, idx) => (
+                        <BentoCard
+                            key={idx}
+                            title={item.title}
+                            description={item.desc}
+                            icon={getIcon(item.title)}
+                            className={item.className || "bg-surface"}
+                            href={item.href}
+                            ctaText={item.cta}
+                        >
+                            {item.visual}
+                        </BentoCard>
+                    ))}
                 </div>
             </div>
         </section>

@@ -1,0 +1,13 @@
+
+> admin-panel-repo@0.1.0 dev
+> next dev -p 3005
+
+Γû▓ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:3005
+- Network:       http://192.168.1.109:3005
+- Environments: .env.local
+
+Γ£ô Starting...
+Γ¿» Unable to acquire lock at C:\Users\rahul\Downloads\DevFixer.com\admin-panel-repo\.next\dev\lock, is another instance of next dev running?
+  Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+[?25h

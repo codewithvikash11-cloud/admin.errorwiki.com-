@@ -10,101 +10,63 @@ import ThemeToggle from './ThemeToggle';
 import Logo from './Logo';
 import { useNavbar } from '@/context/NavbarContext';
 
-const Navbar = ({ onMenuClick, isSidebarOpen, centerContent: propCenter, customActions: propActions, hideSearch: propHideSearch, hideLinks: propHideLinks = false }) => {
-    const router = useRouter();
-    const pathname = usePathname();
-    const { user, logout } = useAuth();
-
-    // ... (rest of context connection and state)
-    // Context connection
-    const {
-        centerContent: contextCenter,
-        customActions: contextActions,
-        hideSearch: contextHideSearch,
-        hideLinks: contextHideLinks
-    } = useNavbar();
-
-    // Prioritize props if passed (legacy/override), else use context
-    const centerContent = propCenter || contextCenter;
-    const customActions = propActions || contextActions;
-    const hideSearch = propHideSearch || contextHideSearch;
-    const hideLinks = propHideLinks || contextHideLinks;
-
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isScrolled, setIsScrolled] = useState(false);
-    const inputRef = React.useRef(null);
-
-    useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    useEffect(() => {
-        if (isSearchOpen && inputRef.current) {
-            setTimeout(() => inputRef.current?.focus(), 50);
-        }
-    }, [isSearchOpen]);
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            router.push(`/errors?q=${encodeURIComponent(searchQuery)}`);
-            setIsSearchOpen(false);
-        }
-    };
-
-    return (
-        <nav className={cn(
-            "fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300",
-            isScrolled || isSearchOpen || centerContent
-                ? "glass-strong border-b border-border shadow-sm"
-                : "bg-transparent border-b border-transparent"
-        )}>
-            <div className={cn(
-                "h-full px-4 md:px-8 flex items-center justify-between gap-4 max-w-[1920px] mx-auto relative transition-opacity duration-300",
-                isSearchOpen ? "opacity-0 md:opacity-100" : "opacity-100"
-            )}>
-
-                {/* Left: Brand & Menu */}
-                <div className="flex items-center gap-3 lg:gap-8 shrink-0">
-                    <button
-                        onClick={onMenuClick}
-                        className="p-2 -ml-2 lg:hidden text-text-secondary hover:text-text-primary active:scale-90 transition-transform"
-                        aria-label="Toggle Menu"
-                    >
-                        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-                    </button>
-
-                    <Link href="/admin" className="flex items-center gap-2 group shrink-0">
-                        <Logo />
-                        <span className="font-bold text-sm bg-accent-primary/10 text-accent-primary px-2 py-0.5 rounded-full border border-accent-primary/20">ADMIN</span>
-                    </Link>
-                </div>
-
-                {/* Right: Actions */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <ThemeToggle />
-
-                    {/* Authenticated State */}
-                    {user && (
-                        <>
-                            <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
-                            <div className="flex items-center gap-3">
-                                <div className="hidden md:flex flex-col items-end mr-2">
-                                    <span className="text-xs font-bold text-text-primary">{user.email}</span>
-                                    <span className="text-[10px] text-accent-primary font-medium">Administrator</span>
-                                </div>
-                                <button onClick={logout} className="p-2 hover:bg-surface rounded-lg text-text-secondary transition-colors" title="Logout">
-                                    <LogOut size={18} />
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
+const Navbar = ({
+    onMenuClick,
+    isSidebarOpen,
+    centerContent: propCenter,
+    customActions: propActions,
+    hideSearch: propHideSearch,
+    hideLinks: propHideLinks = false,
+    menuItems = [] // New prop
+}) => {
+    // ...
+    // (Ensure existing logic remains)
+    // ...
+    // ... inside return ...
+    {/* Public Links (if not hidden) */ }
+    {
+        !hideLinks && !user && (
+            <div className="hidden md:flex items-center gap-4 mr-4">
+                {menuItems && menuItems.length > 0 ? (
+                    menuItems.sort((a, b) => a.order - b.order).map(item => (
+                        <NavLink key={item.$id || item.id} href={item.path}>{item.label}</NavLink>
+                    ))
+                ) : (
+                    <>
+                        {/* Fallback if no menu items */}
+                        <NavLink href="/compiler">Compiler</NavLink>
+                        <NavLink href="/tools">Tools</NavLink>
+                        <NavLink href="/blog">Blog</NavLink>
+                    </>
+                )}
+                <Link href="/admin/login" className="text-sm font-bold text-text-primary hover:text-accent-primary transition-colors">
+                    Login
+                </Link>
             </div>
-        </nav>
+        )
+    }
+
+
+    {/* Authenticated State */ }
+    {
+        user && (
+            <>
+                <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
+                <div className="flex items-center gap-3">
+                    <div className="hidden md:flex flex-col items-end mr-2">
+                        <span className="text-xs font-bold text-text-primary">{user.email}</span>
+                        <span className="text-[10px] text-accent-primary font-medium">Administrator</span>
+                    </div>
+                    <button onClick={logout} className="p-2 hover:bg-surface rounded-lg text-text-secondary transition-colors" title="Logout">
+                        <LogOut size={18} />
+                    </button>
+                </div>
+            </>
+        )
+    }
+                </div >
+            </div >
+        </nav >
     );
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { pagesService } from '@/lib/pages';
+import { pages as pagesService } from '@/lib/pages';
 import Link from 'next/link';
 import { Plus, Edit2, Trash2, Eye, File, Loader2 } from 'lucide-react';
 
@@ -14,15 +14,19 @@ export default function PagesAdmin() {
     }, []);
 
     const loadPages = async () => {
-        const data = await pagesService.getPages();
+        const data = await pagesService.getAll(); // Changed from getPages to getAll matching lib/pages.js
         setPages(data);
         setIsLoading(false);
     };
 
-    const handleDelete = async (slug) => {
+    const handleDelete = async (id) => {
         if (!confirm("Are you sure?")) return;
-        await pagesService.deletePage(slug);
-        setPages(pages.filter(p => p.slug !== slug));
+        try {
+            await pagesService.delete(id);
+            setPages(pages.filter(p => p.id !== id));
+        } catch (e) {
+            alert("Failed to delete page");
+        }
     };
 
     return (
@@ -33,7 +37,7 @@ export default function PagesAdmin() {
                     <p className="text-text-secondary">Manage static pages like About, Terms, Privacy.</p>
                 </div>
                 <Link
-                    href="/admin/posts/new?type=page" // Reusing post editor for now with type flag if needed, or separate route
+                    href="/admin/pages/create"
                     className="flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-white font-bold rounded-xl hover:scale-[1.02] transition-transform"
                 >
                     <Plus size={18} />
@@ -65,15 +69,15 @@ export default function PagesAdmin() {
                                     </td>
                                     <td className="p-4 text-sm font-mono text-text-secondary">/{page.slug}</td>
                                     <td className="p-4">
-                                        <span className="px-2 py-1 bg-green-500/10 text-green-500 rounded text-xs font-bold uppercase">
+                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${page.status === 'published' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
                                             {page.status}
                                         </span>
                                     </td>
                                     <td className="p-4 text-right flex justify-end gap-2">
-                                        <Link href={`/admin/posts/edit/${page.slug}?type=page`} className="p-2 hover:bg-surface rounded text-blue-500">
+                                        <Link href={`/admin/pages/edit/${page.id}`} className="p-2 hover:bg-surface rounded text-blue-500">
                                             <Edit2 size={16} />
                                         </Link>
-                                        <button onClick={() => handleDelete(page.slug)} className="p-2 hover:bg-surface rounded text-red-500">
+                                        <button onClick={() => handleDelete(page.id)} className="p-2 hover:bg-surface rounded text-red-500">
                                             <Trash2 size={16} />
                                         </button>
                                     </td>

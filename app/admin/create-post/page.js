@@ -1,15 +1,19 @@
-"use client";
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
-import { createPost } from '@/lib/posts';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { createPost, updatePost, getPost } from '@/lib/actions/posts';
 import { Wand2, Save, Eye, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function CreatePostPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const editId = searchParams.get('id');
+
     const [loading, setLoading] = useState(false);
+    const [fetching, setFetching] = useState(!!editId);
     const [activeTab, setActiveTab] = useState('edit'); // 'edit', 'preview'
 
     const [formData, setFormData] = useState({
@@ -22,6 +26,33 @@ export default function CreatePostPage() {
     });
 
     const [rawInput, setRawInput] = useState('');
+
+    useEffect(() => {
+        if (editId) {
+            loadPost();
+        }
+    }, [editId]);
+
+    const loadPost = async () => {
+        setFetching(true);
+        try {
+            const data = await getPost(editId);
+            if (data) {
+                setFormData({
+                    title: data.title || '',
+                    slug: data.slug || '',
+                    metaDescription: data.description || '', // Map description to metaDescription if needed
+                    category: data.category || 'Programming',
+                    status: data.status || 'draft',
+                    content: data.content || ''
+                });
+            }
+        } catch (e) {
+            console.error("Failed to load post", e);
+        } finally {
+            setFetching(false);
+        }
+    };
 
     // --- LOGIC ---
     const generateSlug = (title) => {
@@ -36,7 +67,7 @@ export default function CreatePostPage() {
         setFormData(prev => ({
             ...prev,
             title,
-            slug: prev.slug || generateSlug(title) // Auto-gen slug if empty
+            slug: (!editId && (!prev.slug || prev.slug === generateSlug(prev.title))) ? generateSlug(title) : prev.slug
         }));
     };
 
@@ -61,21 +92,10 @@ export default function CreatePostPage() {
             activeText = activeText.replace(regex, replacements[key]);
         });
 
-        // 2. Add transition words randomly if missing (simplified)
-        // This is a basic mock since we can't use NLP
-        const transitions = ["However,", "In fact,", "Specifically,"];
         const paragraphs = activeText.split('\n\n');
-
-        const humanizedParagraphs = paragraphs.map((p, i) => {
-            if (i > 0 && Math.random() > 0.7 && !transitions.some(t => p.startsWith(t))) {
-                return `${transitions[Math.floor(Math.random() * transitions.length)]} ${p}`;
-            }
-            return p;
-        });
-
         setFormData(prev => ({
             ...prev,
-            content: humanizedParagraphs.join('\n\n')
+            content: paragraphs.join('\n\n')
         }));
     };
 
@@ -84,20 +104,24 @@ export default function CreatePostPage() {
         setLoading(true);
         try {
             const finalStatus = statusOverride || formData.status;
-
-            await createPost({
+            const payload = {
                 ...formData,
                 status: finalStatus,
-                // Map fields to match lib/posts.js expectations
                 description: formData.metaDescription,
                 seoTitle: formData.title,
                 seoDescription: formData.metaDescription,
-                userId: user.$id,
-                authorId: user.$id,
-                authorName: user.name,
+                userId: user.email || 'admin', // Use email as ID for compatibility
+                authorId: user.email || 'admin',
+                authorName: user.name || 'Admin',
                 code: '', // Optional
                 language: 'markdown'
-            });
+            };
+
+            if (editId) {
+                await updatePost(editId, payload);
+            } else {
+                await createPost(payload);
+            }
 
             router.push('/admin/posts');
         } catch (error) {
@@ -107,6 +131,8 @@ export default function CreatePostPage() {
             setLoading(false);
         }
     };
+
+    if (fetching) return <div className="p-12 text-center animate-pulse">Loading post...</div>;
 
     return (
         <div className="max-w-5xl mx-auto space-y-6">
@@ -128,7 +154,7 @@ export default function CreatePostPage() {
                         className="px-4 py-2 rounded-lg bg-[#008000] text-white font-bold hover:bg-[#006600] transition-all flex items-center gap-2"
                     >
                         {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                        Publish
+                        {editId ? 'Update' : 'Publish'}
                     </button>
                 </div>
             </div>
@@ -234,7 +260,6 @@ export default function CreatePostPage() {
                             />
                         ) : (
                             <div className="flex-1 w-full bg-white text-black rounded-xl p-8 overflow-y-auto prose prose-sm max-w-none">
-                                {/* Basic markdown preview rendering (simplified) */}
                                 {formData.content.split('\n').map((line, i) => {
                                     if (line.startsWith('# ')) return <h1 key={i}>{line.replace('# ', '')}</h1>;
                                     if (line.startsWith('## ')) return <h2 key={i}>{line.replace('## ', '')}</h2>;

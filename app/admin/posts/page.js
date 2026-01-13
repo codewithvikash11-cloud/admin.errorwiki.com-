@@ -21,9 +21,9 @@ export default function AdminPostsPage() {
         setLoading(false);
     };
 
-    const handleDelete = async (slug) => {
+    const handleDelete = async (id) => {
         if (!confirm('Are you sure you want to delete this post?')) return;
-        await deletePost(slug);
+        await deletePost(id);
         loadPosts();
     };
 
@@ -91,10 +91,10 @@ export default function AdminPostsPage() {
                                         <Link href={`/post/${post.slug}`} target="_blank" className="inline-block p-2 text-text-secondary hover:text-white transition-colors">
                                             <Eye size={16} />
                                         </Link>
-                                        <button disabled className="inline-block p-2 text-text-secondary hover:text-white transition-colors opacity-50 cursor-not-allowed" title="Edit coming soon">
+                                        <Link href={`/admin/create-post?id=${post.id}`} className="inline-block p-2 text-text-secondary hover:text-white transition-colors">
                                             <Edit2 size={16} />
-                                        </button>
-                                        <button onClick={() => handleDelete(post.slug)} className="inline-block p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                                        </Link>
+                                        <button onClick={() => handleDelete(post.id)} className="inline-block p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
                                             <Trash2 size={16} />
                                         </button>
                                     </td>
