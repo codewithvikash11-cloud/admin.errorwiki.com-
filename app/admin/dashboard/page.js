@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PenTool, FileText, BarChart3, Users, Zap, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getPosts } from '@/lib/posts';
+import { getPosts } from '@/lib/actions/posts';
 
 export default function AdminDashboard() {
     const { user } = useAuth();

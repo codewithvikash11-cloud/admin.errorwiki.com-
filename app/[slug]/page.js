@@ -1,12 +1,13 @@
 import React from 'react';
 import { getPageBySlug } from '@/lib/actions/pages';
+import { getMenus } from '@/lib/actions/menus';
 import PageRenderer from '@/components/PageRenderer';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }) {
-    const slug = params.slug;
+    const { slug } = await params;
     const page = await getPageBySlug(`page-${slug}`); // We enforce 'page-' prefix for custom pages in createPage
 
     if (!page) {
@@ -30,11 +31,14 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function DynamicPage({ params }) {
-    const slug = params.slug;
+    const { slug } = await params;
 
     // In PageEditor I used `fullSlug = page-${slug}`.
     // So I must fetch with prefix.
-    const page = await getPageBySlug(`page-${slug}`);
+    const [page, menuItems] = await Promise.all([
+        getPageBySlug(`page-${slug}`),
+        getMenus()
+    ]);
 
     if (!page) {
         notFound();

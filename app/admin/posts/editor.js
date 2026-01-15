@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createPost, updatePost, getPostBySlug } from '@/lib/posts';
+import { createPost, updatePost, getPostBySlug } from '@/lib/actions/posts';
 import { useAuth } from '@/context/AuthContext';
 import { Save, ArrowLeft, Image as ImageIcon, Code, Eye, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';

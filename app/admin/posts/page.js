@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { getPosts, deletePost } from '@/lib/posts';
+import { getPosts, deletePost } from '@/lib/actions/posts';
 import Link from 'next/link';
 import { Edit2, Trash2, Eye, Plus, Search } from 'lucide-react';
 

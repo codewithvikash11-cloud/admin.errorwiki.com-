@@ -2,19 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { updatePage, deletePage } from '@/lib/actions/pages'; // Fix import
-import { pages as pagesService } from '@/lib/pages'; // We need to fetch initial data. Can we use Server Action? Or lib directly if compatible?
-// Since this is client component, we need a way to fetch data. 
-// Ideally we pass data from Server Component wrapper. But this is the page.js.
-// We can use a Server Action to 'get' data too, or just fetch from an API route.
-// Let's assume we can add a 'getPage' action to lib/actions/pages.js or use the one we have? 
-// Actually lib/actions/pages.js only has Create/Update/Delete.
-// I will add 'getPage' to lib/actions/pages.js later.
-// For now I'll stub the fetch or use the one I'm about to add.
-
+import { updatePage, deletePage, getPage } from '@/lib/actions/pages';
 import { Save, ArrowLeft, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock';
-import { getPage } from '@/lib/actions/pages'; // I will add this
 
 export default function EditPage() {
     const router = useRouter();

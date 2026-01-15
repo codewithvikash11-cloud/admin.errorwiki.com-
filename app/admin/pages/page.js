@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { pages as pagesService } from '@/lib/pages';
+import { getPages, deletePage } from '@/lib/actions/pages';
 import Link from 'next/link';
 import { Plus, Edit2, Trash2, Eye, File, Loader2 } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export default function PagesAdmin() {
     }, []);
 
     const loadPages = async () => {
-        const data = await pagesService.getAll(); // Changed from getPages to getAll matching lib/pages.js
+        const data = await getPages();
         setPages(data);
         setIsLoading(false);
     };
@@ -22,7 +22,7 @@ export default function PagesAdmin() {
     const handleDelete = async (id) => {
         if (!confirm("Are you sure?")) return;
         try {
-            await pagesService.delete(id);
+            await deletePage(id);
             setPages(pages.filter(p => p.id !== id));
         } catch (e) {
             alert("Failed to delete page");

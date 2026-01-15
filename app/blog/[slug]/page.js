@@ -9,7 +9,8 @@ import { ArrowLeft, Clock, Tag } from 'lucide-react';
 import CodeBlock from '@/components/CodeBlock'; // Reusing CodeBlock if applicable for markdown
 
 export async function generateMetadata({ params }) {
-    const post = await getPostBySlug(params.slug);
+    const { slug } = await params;
+    const post = await getPostBySlug(slug);
     if (!post) return { title: 'Post Not Found' };
     return {
         title: `${post.seoTitle || post.title} | ErrorWiki`,
@@ -18,8 +19,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
+    const { slug } = await params;
     const [post, menuItems] = await Promise.all([
-        getPostBySlug(params.slug),
+        getPostBySlug(slug),
         getMenus()
     ]);
 
