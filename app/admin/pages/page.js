@@ -1,92 +1,141 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { getPages, deletePage } from '@/lib/actions/pages';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Edit2, Trash2, Eye, File, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, FileText, Globe, Eye } from 'lucide-react';
+import { getPages, deletePage } from '@/lib/actions/pages';
+import { toast } from 'sonner';
+import PageHeader from '@/components/admin/PageHeader';
+import DataTable from '@/components/admin/DataTable';
 
-export default function PagesAdmin() {
+export default function PagesList() {
     const [pages, setPages] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
+    const [filteredPages, setFilteredPages] = useState([]);
 
     useEffect(() => {
         loadPages();
     }, []);
 
     const loadPages = async () => {
+        setLoading(true);
         const data = await getPages();
         setPages(data);
-        setIsLoading(false);
+        setFilteredPages(data);
+        setLoading(false);
     };
 
     const handleDelete = async (id) => {
-        if (!confirm("Are you sure?")) return;
-        try {
-            await deletePage(id);
-            setPages(pages.filter(p => p.id !== id));
-        } catch (e) {
-            alert("Failed to delete page");
+        if (!confirm('Are you sure you want to delete this page?')) return;
+
+        const res = await deletePage(id);
+        if (res.success) {
+            toast.success('Page deleted');
+            loadPages();
+        } else {
+            toast.error('Failed to delete');
         }
     };
 
+    const handleSearch = (term) => {
+        if (!term) {
+            setFilteredPages(pages);
+            return;
+        }
+        const lower = term.toLowerCase();
+        setFilteredPages(pages.filter(p => p.title.toLowerCase().includes(lower)));
+    };
+
+
+    const columns = [
+        {
+            header: 'Page',
+            accessor: 'title',
+            render: (row) => (
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-500">
+                        <FileText size={16} />
+                    </div>
+                    <div>
+                        <div className="font-medium text-white">{row.title}</div>
+                        <div className="text-xs text-slate-500">/{row.slug}</div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            header: 'Status',
+            accessor: 'status',
+            render: (row) => (
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${row.status === 'published'
+                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                        : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                    }`}>
+                    {row.status === 'published' ? 'Published' : 'Draft'}
+                </span>
+            )
+        },
+        {
+            header: 'Last Updated',
+            accessor: 'updatedAt',
+            render: (row) => row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : '-'
+        },
+        {
+            header: 'Actions',
+            render: (row) => (
+                <div className="flex items-center justify-end gap-2">
+                    {row.status === 'published' && (
+                        <a
+                            href={`https://devfixer.com/${row.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 hover:bg-[#1e293b] rounded-lg text-slate-400 hover:text-white transition-colors"
+                            title="View Live"
+                        >
+                            <Globe size={16} />
+                        </a>
+                    )}
+                    <Link
+                        href={`/admin/pages/${row.id}`}
+                        className="p-2 hover:bg-[#1e293b] rounded-lg text-slate-400 hover:text-blue-400 transition-colors"
+                        title="Edit"
+                    >
+                        <Edit2 size={16} />
+                    </Link>
+                    <button
+                        onClick={() => handleDelete(row.id)}
+                        className="p-2 hover:bg-[#1e293b] rounded-lg text-slate-400 hover:text-red-500 transition-colors"
+                        title="Delete"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+            )
+        }
+    ];
+
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-black text-text-primary tracking-tight mb-2">Pages</h1>
-                    <p className="text-text-secondary">Manage static pages like About, Terms, Privacy.</p>
-                </div>
-                <Link
-                    href="/admin/pages/create"
-                    className="flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-white font-bold rounded-xl hover:scale-[1.02] transition-transform"
-                >
-                    <Plus size={18} />
-                    Create Page
-                </Link>
-            </div>
+            <PageHeader
+                title="Pages"
+                description="Manage static content pages."
+                actions={
+                    <Link
+                        href="/admin/pages/create"
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-blue-600/20"
+                    >
+                        <Plus size={18} />
+                        Create Page
+                    </Link>
+                }
+            />
 
-            <div className="bg-panel border border-border rounded-2xl overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-surface border-b border-border">
-                        <tr>
-                            <th className="p-4 text-xs font-bold text-text-secondary uppercase">Page Name</th>
-                            <th className="p-4 text-xs font-bold text-text-secondary uppercase">Slug</th>
-                            <th className="p-4 text-xs font-bold text-text-secondary uppercase">Status</th>
-                            <th className="p-4 text-xs font-bold text-text-secondary uppercase text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                        {isLoading ? (
-                            <tr><td colSpan="4" className="p-8 text-center animate-pulse">Loading...</td></tr>
-                        ) : pages.length === 0 ? (
-                            <tr><td colSpan="4" className="p-8 text-center text-text-tertiary">No pages found. Create one!</td></tr>
-                        ) : (
-                            pages.map(page => (
-                                <tr key={page.id} className="hover:bg-surface/50 transition-colors">
-                                    <td className="p-4 font-bold flex items-center gap-3">
-                                        <File size={16} className="text-text-tertiary" />
-                                        {page.title}
-                                    </td>
-                                    <td className="p-4 text-sm font-mono text-text-secondary">/{page.slug}</td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${page.status === 'published' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
-                                            {page.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-right flex justify-end gap-2">
-                                        <Link href={`/admin/pages/edit/${page.id}`} className="p-2 hover:bg-surface rounded text-blue-500">
-                                            <Edit2 size={16} />
-                                        </Link>
-                                        <button onClick={() => handleDelete(page.id)} className="p-2 hover:bg-surface rounded text-red-500">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <DataTable
+                columns={columns}
+                data={filteredPages}
+                searchPlaceholder="Search pages..."
+                onSearch={handleSearch}
+            />
         </div>
     );
 }

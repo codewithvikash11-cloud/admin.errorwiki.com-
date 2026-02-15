@@ -1,23 +1,28 @@
 import { NextResponse } from 'next/server';
-import { decrypt } from './lib/session';
+import { verifySession } from '@/lib/session';
 
-export async function middleware(req) {
-    const path = req.nextUrl.pathname;
-    const isPublicPath = path === '/admin/login';
-    const isAdminPath = path.startsWith('/admin');
+export async function middleware(request) {
+    // 1. Check if route is protected (Starts with /admin)
+    const path = request.nextUrl.pathname;
+    const isProtectedRoute = path.startsWith('/admin');
+    const isLoginPage = path === '/admin/login';
 
-    // Decrypt the session from the cookie
-    const cookie = req.cookies.get('admin_session')?.value;
-    const session = await decrypt(cookie);
+    if (isProtectedRoute && !isLoginPage) {
+        // 2. Verify Session
+        const session = await verifySession();
 
-    // If trying to access admin routes (except login) and not logged in
-    if (isAdminPath && !isPublicPath && !session?.userId) {
-        return NextResponse.redirect(new URL('/admin/login', req.nextUrl));
+        if (!session?.userId) {
+            // 3. Redirect to Login if invalid
+            return NextResponse.redirect(new URL('/admin/login', request.nextUrl));
+        }
     }
 
-    // If logged in and trying to access login page, redirect to dashboard
-    if (isPublicPath && session?.userId) {
-        return NextResponse.redirect(new URL('/admin/dashboard', req.nextUrl));
+    if (isLoginPage) {
+        // Redirect to dashboard if already logged in
+        const session = await verifySession();
+        if (session?.userId) {
+            return NextResponse.redirect(new URL('/admin/dashboard', request.nextUrl));
+        }
     }
 
     return NextResponse.next();

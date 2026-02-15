@@ -1,161 +1,169 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { mediaService } from '@/lib/media';
-import { Upload, Trash2, Link as LinkIcon, Image as ImageIcon, Copy, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useState, useRef } from 'react';
+import { Upload, Trash2, Image as ImageIcon, Loader2, RefreshCw, Copy, ExternalLink } from 'lucide-react';
+import { getFiles, uploadFile, deleteFile } from '@/lib/actions/media';
+import { toast } from 'sonner';
 
 export default function MediaPage() {
     const [files, setFiles] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isUploading, setIsUploading] = useState(false);
-    const [copiedId, setCopiedId] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
-        fetchMedia();
+        loadFiles();
     }, []);
 
-    const fetchMedia = async () => {
-        try {
-            const data = await mediaService.listFiles(50);
-            setFiles(data);
-        } catch (error) {
-            console.error("Fetch Media Error:", error);
-        } finally {
-            setIsLoading(false);
-        }
+    const loadFiles = async () => {
+        setLoading(true);
+        const data = await getFiles();
+        setFiles(data);
+        setLoading(false);
     };
 
     const handleUpload = async (e) => {
-        const file = e.target.files[0];
+        const file = e.target.files?.[0];
         if (!file) return;
 
-        setIsUploading(true);
-        try {
-            await mediaService.uploadFile(file);
-            await fetchMedia(); // Refresh list
-        } catch (error) {
-            alert("Upload failed: " + error.message);
-        } finally {
-            setIsUploading(false);
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await uploadFile(formData);
+
+        if (res.success) {
+            toast.success('File uploaded successfully');
+            loadFiles();
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        } else {
+            toast.error(res.error || 'Upload failed');
+            // If error is permission related path
+            if (res.error?.includes('scope')) {
+                toast.error("Check API Key permissions (storage.write)");
+            }
+        }
+        setUploading(false);
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm('Delete this file?')) return;
+
+        const res = await deleteFile(id);
+        if (res.success) {
+            toast.success('File deleted');
+            loadFiles(); // Refresh
+        } else {
+            toast.error('Failed to delete');
         }
     };
 
-    const handleDelete = async (fileId) => {
-        if (!confirm("Are you sure? This cannot be undone.")) return;
-        try {
-            await mediaService.deleteFile(fileId);
-            setFiles(files.filter(f => f.$id !== fileId));
-        } catch (error) {
-            alert("Delete failed: " + error.message);
-        }
-    };
-
-    const copyUrl = (id) => {
-        const url = mediaService.getFileView(id);
-        navigator.clipboard.writeText(url);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        toast.success('URL copied to clipboard');
     };
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-black text-text-primary tracking-tight mb-2">Media Library</h1>
-                    <p className="text-text-secondary">Manage and upload images/assets for your content.</p>
+                    <p className="text-text-secondary">Manage images and uploads.</p>
                 </div>
-                <div className="relative">
-                    <input
-                        type="file"
-                        onChange={handleUpload}
-                        className="hidden"
-                        id="media-upload"
-                        accept="image/*,application/pdf"
-                        disabled={isUploading}
-                    />
-                    <label
-                        htmlFor="media-upload"
-                        className={cn(
-                            "flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-white font-bold rounded-xl shadow-lg shadow-accent-primary/20 hover:scale-[1.02] transition-transform cursor-pointer",
-                            isUploading && "opacity-50 cursor-not-allowed"
-                        )}
+                <div className="flex gap-2">
+                    <button
+                        onClick={loadFiles}
+                        className="p-2 hover:bg-surface-hover rounded-xl text-text-secondary transition-colors"
+                        title="Refresh"
                     >
-                        {isUploading ? (
-                            <span className="animate-spin">⌛</span>
-                        ) : (
-                            <Upload size={18} />
-                        )}
-                        {isUploading ? 'Uploading...' : 'Upload File'}
-                    </label>
+                        <RefreshCw size={20} />
+                    </button>
+                    <div className="relative">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleUpload}
+                            className="hidden"
+                            accept="image/*"
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="flex items-center gap-2 bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 rounded-xl font-bold transition-all disabled:opacity-50"
+                        >
+                            {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                            {uploading ? 'Uploading...' : 'Upload Image'}
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Gallery Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {isLoading ? (
-                    [1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="aspect-square bg-panel border border-border rounded-xl animate-pulse" />
-                    ))
-                ) : files.length === 0 ? (
-                    <div className="col-span-full py-12 text-center text-text-tertiary bg-panel border-dashed border-2 border-border rounded-2xl">
-                        <ImageIcon size={48} className="mx-auto mb-4 opacity-20" />
-                        <p>No media files found.</p>
+            {loading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="aspect-square bg-surface-card rounded-xl"></div>
+                    ))}
+                </div>
+            ) : files.length === 0 ? (
+                <div className="text-center py-20 bg-surface-card border border-border-primary rounded-2xl border-dashed">
+                    <div className="w-16 h-16 bg-surface-hover rounded-full flex items-center justify-center mx-auto mb-4 text-text-secondary">
+                        <ImageIcon size={32} />
                     </div>
-                ) : (
-                    files.map(file => (
-                        <div key={file.$id} className="group relative bg-panel border border-border rounded-xl aspect-square flex flex-col overflow-hidden hover:border-accent-primary/50 transition-colors">
-                            {/* Preview */}
-                            <div className="flex-1 bg-surface-highlight flex items-center justify-center overflow-hidden">
-                                {file.mimeType.startsWith('image/') ? (
-                                    <img
-                                        src={mediaService.getFileView(file.$id)}
-                                        alt={file.name}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                    />
-                                ) : (
-                                    <FileIcon mime={file.mimeType} />
-                                )}
+                    <h3 className="text-lg font-bold text-text-primary mb-1">No media found</h3>
+                    <p className="text-text-secondary mb-6">Upload images to use them in your posts.</p>
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-brand-primary font-bold hover:underline"
+                    >
+                        Upload your first image
+                    </button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {files.map((file) => (
+                        <div key={file.id} className="group relative bg-surface-card border border-border-primary rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                            <div className="aspect-square bg-surface-hover relative overflow-hidden">
+                                {/* Next.js Image would be better, but we need configured domains. Using img for admin panel is safe/easier for now */}
+                                <img
+                                    src={file.preview}
+                                    alt={file.name}
+                                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <button
+                                        onClick={() => window.open(file.url, '_blank')}
+                                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg backdrop-blur-sm transition-colors"
+                                        title="Open Original"
+                                    >
+                                        <ExternalLink size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(file.id)}
+                                        className="p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg backdrop-blur-sm transition-colors"
+                                        title="Delete"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
-
-                            {/* Actions Overlay */}
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                <button
-                                    onClick={() => copyUrl(file.$id)}
-                                    className="p-2 bg-white/10 text-white hover:bg-accent-primary rounded-lg backdrop-blur-sm transition-colors"
-                                    title="Copy URL"
-                                >
-                                    {copiedId === file.$id ? <Check size={16} /> : <Copy size={16} />}
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(file.$id)}
-                                    className="p-2 bg-white/10 text-white hover:bg-red-500 rounded-lg backdrop-blur-sm transition-colors"
-                                    title="Delete"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-
-                            {/* Footer Info */}
-                            <div className="p-2 bg-panel border-t border-border text-xs truncate">
-                                <p className="font-bold text-text-primary truncate">{file.name}</p>
-                                <p className="text-text-tertiary">{(file.sizeOriginal / 1024).toFixed(1)} KB</p>
+                            <div className="p-3">
+                                <p className="text-sm font-medium text-text-primary truncate" title={file.name}>{file.name}</p>
+                                <div className="flex items-center justify-between mt-2">
+                                    <span className="text-[10px] text-text-secondary uppercase tracking-wider">
+                                        {(file.size / 1024).toFixed(1)} KB
+                                    </span>
+                                    <button
+                                        onClick={() => copyToClipboard(file.url)}
+                                        className="text-[10px] flex items-center gap-1 text-brand-primary hover:text-brand-primary/80 font-medium"
+                                    >
+                                        <Copy size={10} /> Copy URL
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    ))
-                )}
-            </div>
-        </div>
-    );
-}
-
-function FileIcon({ mime }) {
-    // Basic icon fallback
-    return (
-        <div className="text-text-tertiary flex flex-col items-center">
-            <Files size={32} strokeWidth={1} />
-            <span className="text-[10px] mt-1 uppercase">{mime.split('/')[1]}</span>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

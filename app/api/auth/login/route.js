@@ -1,29 +1,40 @@
 import { createSession } from '@/lib/session';
 import { NextResponse } from 'next/server';
+import { Client, Account } from 'node-appwrite';
 
 export async function POST(request) {
     try {
         const body = await request.json();
         const { email, password } = body;
 
-        // Securely check credentials against Environment Variables
-        // In production, these should be set in Vercel project settings
-        const validEmail = process.env.ADMIN_EMAIL || 'admin@errorwiki.com';
-        const validPassword = process.env.ADMIN_PASSWORD || 'Admin@12345';
+        // 1. Initialize Transient Client (acting as user, NO API KEY)
+        const client = new Client()
+            .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT)
+            .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID);
 
-        if (email === validEmail && password === validPassword) {
-            // Create session
-            // We use the email as the userId for simplicity in this single-admin setup
-            await createSession(email);
+        const account = new Account(client);
+
+        try {
+            // 2. Attempt to create session with Appwrite
+            // If this succeeds, the credentials are valid
+            const session = await account.createEmailPasswordSession(email, password);
+
+            // 3. Create Internal Session (JWT Cookie)
+            // We use the Appwrite User ID
+            await createSession(session.userId);
 
             return NextResponse.json({ success: true });
+
+        } catch (appwriteError) {
+            console.error("Appwrite Auth Failed:", appwriteError.message);
+            return NextResponse.json(
+                { success: false, error: 'Invalid email or password' },
+                { status: 401 }
+            );
         }
 
-        return NextResponse.json(
-            { success: false, error: 'Invalid email or password' },
-            { status: 401 }
-        );
     } catch (error) {
+        console.error("Login Route Error:", error);
         return NextResponse.json(
             { success: false, error: 'Internal server error' },
             { status: 500 }
